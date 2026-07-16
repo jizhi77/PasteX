@@ -19,7 +19,14 @@ final class PanelController: NSObject, NSWindowDelegate {
     func show() {
         pasteTarget = NSWorkspace.shared.frontmostApplication
         let panel = makePanelIfNeeded()
-        panel.center()
+        if store.settings.quickMenuNearCursor, let point = focusedInputPoint() {
+            let screen = NSScreen.screens.first { $0.visibleFrame.contains(point) } ?? NSScreen.main
+            let visible = screen?.visibleFrame ?? .zero
+            let origin = NSPoint(x: min(max(point.x, visible.minX), visible.maxX - panel.frame.width), y: min(max(point.y - panel.frame.height - 12, visible.minY), visible.maxY - panel.frame.height))
+            panel.setFrameOrigin(origin)
+        } else {
+            panel.center()
+        }
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
         NotificationCenter.default.post(name: .pasteXFocusSearch, object: nil)
@@ -49,9 +56,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
     }
 
-    func paste(_ item: ClipboardItem) {
+    func paste(_ item: ClipboardItem, textOverride: String? = nil) {
         hide()
-        store.paste(item, into: pasteTarget)
+        store.paste(item, into: pasteTarget, textOverride: textOverride)
     }
 
     func windowDidResignKey(_ notification: Notification) {
@@ -73,9 +80,24 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.isMovableByWindowBackground = true
         panel.level = .floating
         panel.delegate = self
-        panel.contentView = NSHostingView(rootView: ClipboardPanelView(store: store, onPaste: { [weak self] item in self?.paste(item) }, onSettings: { [weak self] in self?.showSettings() }, onClose: { [weak self] in self?.hide() }))
+        panel.contentView = NSHostingView(rootView: ClipboardPanelView(store: store, onPaste: { [weak self] item in self?.paste(item) }, onPasteText: { [weak self] item, text in self?.paste(item, textOverride: text) }, onSettings: { [weak self] in self?.showSettings() }, onClose: { [weak self] in self?.hide() }))
         self.panel = panel
         return panel
+    }
+
+    private func focusedInputPoint() -> CGPoint? {
+        guard AXIsProcessTrusted() else { return nil }
+        let system = AXUIElementCreateSystemWide()
+        var focusedValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &focusedValue) == .success,
+              let focusedValue, CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
+        let focused = unsafeDowncast(focusedValue, to: AXUIElement.self)
+        var pointValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(focused, kAXPositionAttribute as CFString, &pointValue) == .success,
+              let pointValue, CFGetTypeID(pointValue) == AXValueGetTypeID() else { return nil }
+        var point = CGPoint.zero
+        guard AXValueGetValue(unsafeDowncast(pointValue, to: AXValue.self), .cgPoint, &point) else { return nil }
+        return point
     }
 }
 

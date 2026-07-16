@@ -1,31 +1,37 @@
 # PasteX
 
-PasteX is a local-first, keyboard-first macOS clipboard history manager. This MVP records plain text only and never syncs data off your Mac.
+PasteX is a local-first, keyboard-first clipboard manager for macOS 14+. It stores history on the Mac, never sends clipboard content to a server, and is designed for fast keyboard-driven reuse.
 
-## Run
+## Run from source
 
 ```bash
 swift run PasteX
 ```
 
-Use **Option-Space** to show the clipboard window. Search immediately, use the arrow keys to select an item, and press **Return** to paste it as plain text.
+The default global shortcut is **Option-Space** (configurable to Command-Shift-V). Search immediately, use the arrow keys to select an item, press Return to paste, or press Command-1 through Command-9 to paste a visible result directly.
 
-The first paste invokes the macOS Accessibility permission request, because PasteX uses the system paste command to insert text into the previously active app. Until permission is granted, the selected text is still copied to the clipboard.
+PasteX requests macOS Accessibility permission only when it needs to paste into the previously active application, position its compact menu near a focused input, or expand snippets system-wide.
+
+## What is included in 0.0.2
+
+- Clipboard history with text, link, code, and color classification; source-app and timestamp metadata; duplicate suppression; search and type/group filters.
+- Menu-bar resident app, configurable global shortcut, keyboard-first panel, compact focused-input positioning with a safe centred fallback, and light/dark native UI.
+- Pinned items, aliases, groups (create/rename/delete), batch deletion, timed history cleanup, and protected destructive clearing.
+- Plain-text paste, one-off editing, saved edited copies, dynamic templates (`{{date}}`, `{{time}}`, `{{clipboard}}`, and custom fields), and optional typed snippet expansion.
+- Configurable history lifetime (1 day, 7 days, 30 days, or forever), maximum item count, and maximum item size. Pinned items are excluded from normal pruning.
+- Privacy controls: timed or manual pause, default password-manager app exclusions, sensitive-content detection, optional short-term sensitive storage, automatic sensitive expiry, Touch ID/system-password reveal, strict screen-sharing masking, and post-paste clipboard clearing.
+- Encrypted local persistence. History and settings live in `~/Library/Application Support/PasteX/history.pastex`; the AES key is stored in the user’s Keychain. A legacy `history.json` file is migrated on first launch.
 
 ## Build a distribution package
 
 ```bash
-./Scripts/package.sh 0.0.1
+./Scripts/package.sh 0.0.2
 ```
 
-This produces `dist/PasteX-v0.0.1-macos-arm64.zip`, containing a macOS app bundle for Apple Silicon Macs (macOS 14+).
+This creates `dist/PasteX-v0.0.2-macos-arm64.zip`, containing an ad-hoc signed `PasteX.app` for Apple Silicon Macs. To sign with a Developer ID for external distribution, provide your identity:
 
-## Included P0 features
+```bash
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./Scripts/package.sh 0.0.2
+```
 
-- Menu bar resident app and Option-Space global shortcut
-- Plain-text clipboard history, local JSON persistence, pause/resume recording
-- Search, keyboard selection, Return-to-paste, and plain-text copy/paste
-- Favorites, basic groups, per-item deletion and history clearing
-- Configurable retention period, text-size cap, and history-size cap
-
-History is stored at `~/Library/Application Support/PasteX/history.json`.
+The GitHub `v0.0.2` release includes the generated ZIP and its SHA-256 checksum.
