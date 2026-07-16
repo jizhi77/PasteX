@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:-0.0.1}"
+VERSION="${1:-0.0.2}"
 ARCH="arm64"
 PRODUCT="PasteX"
 DIST="$ROOT/dist"
@@ -33,6 +33,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 chmod +x "$APP/Contents/MacOS/$PRODUCT"
+codesign --force --deep --sign "${SIGNING_IDENTITY:--}" --timestamp=none "$APP"
+codesign --verify --deep --strict "$APP"
 rm -f "$DIST/$PRODUCT-v$VERSION-macos-$ARCH.zip"
 (
   cd "$DIST"
