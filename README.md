@@ -12,7 +12,7 @@ The default global shortcut is **Option-Space** (configurable to Command-Shift-V
 
 PasteX requests macOS Accessibility permission only when it needs to paste into the previously active application, position its compact menu near a focused input, or expand snippets system-wide.
 
-## What is included in 0.0.5
+## What is included in 0.0.6
 
 - Clipboard history with text, link, code, and color classification; source-app and timestamp metadata; duplicate suppression; search and type/group filters.
 - Menu-bar resident app, configurable global shortcut, keyboard-first panel, compact focused-input positioning with a safe centred fallback, and light/dark native UI.
@@ -24,17 +24,18 @@ PasteX requests macOS Accessibility permission only when it needs to paste into 
 - Settings open in their own window. Clipboard history opens as an independent borderless floating panel, automatically focuses search, supports type/group/favorites filtering, and closes when it loses focus.
 - The compact left navigation now only retains primary history actions; group and type filtering lives in the history toolbar so the history list remains the visual focus.
 - Native visual refinement: layered system materials, adaptive light/dark contrast, animated floating presentation, remembered history-panel frame, focused search, virtualized material cards, smart relative times, and dedicated text/code/file-path/sensitive-content rendering.
+- Refined single-panel presentation with a compact top control strip, plus reliable one-click paste back to the previously active input target.
 
 ## Build a distribution package
 
 ```bash
-./Scripts/package.sh 0.0.5
+./Scripts/package.sh 0.0.6
 ```
 
-This creates `dist/PasteX-v0.0.5-macos-arm64.zip`, containing an ad-hoc signed `PasteX.app` for Apple Silicon Macs. To sign with a Developer ID for external distribution, provide your identity:
+This creates `dist/PasteX-v0.0.6-macos-arm64.zip`, containing an ad-hoc signed `PasteX.app` for Apple Silicon Macs. To sign with a Developer ID for external distribution, provide your identity:
 
 ```bash
-SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./Scripts/package.sh 0.0.5
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./Scripts/package.sh 0.0.6
 ```
 
-The GitHub `v0.0.5` release includes the generated ZIP and its SHA-256 checksum.
+The GitHub `v0.0.6` release includes the generated ZIP and its SHA-256 checksum.

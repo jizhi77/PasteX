@@ -69,12 +69,15 @@ struct ClipboardPanelView: View {
     }
 
     private var panelLayout: some View {
-        HStack(spacing: 0) {
-            sidebar
-            Divider().overlay(Design.Color.separator)
+        ZStack {
+            LinearGradient(
+                colors: [Color.accentColor.opacity(0.11), .clear, Color.accentColor.opacity(0.035)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
             VStack(spacing: 0) {
                 toolbar
-                Divider().overlay(Design.Color.separator)
+                Divider().overlay(Color(nsColor: .separatorColor).opacity(0.35))
                 content
             }
         }
@@ -101,71 +104,63 @@ struct ClipboardPanelView: View {
         }
     }
 
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: Design.Space.xs) {
-            HStack(spacing: Design.Space.xs) {
-                Image(systemName: "clipboard")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Design.Color.muted)
-                Text("PasteX")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Design.Color.muted)
-                Spacer()
-                if store.settings.isPaused {
-                    Circle().fill(Design.Color.pause).frame(width: 7, height: 7)
-                }
-            }
-            .padding(.bottom, Design.Space.sm)
-
-            SidebarButton(title: "All history", symbol: "clock", selected: filter == .all) { filter = .all }
-            SidebarButton(title: "Favorites", symbol: "star", selected: filter == .favorites) { filter = .favorites }
-            Spacer()
-            Divider().overlay(Design.Color.separator)
-            Menu {
-                if store.settings.isPaused { Button("Resume recording") { store.resumeRecording() } }
-                else { ForEach(PauseDuration.allCases) { duration in Button(duration.title) { store.pause(for: duration) } } }
-            } label: {
-                Label(store.settings.isPaused ? "Recording paused" : "Recording active", systemImage: store.settings.isPaused ? "pause.fill" : "record.circle")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(store.settings.isPaused ? Design.Color.pause : Design.Color.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 5)
-            }
-            .menuStyle(.borderlessButton)
-            Button(action: onSettings) {
-                Label("Settings", systemImage: "gearshape")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Design.Color.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 5)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(Design.Space.sm)
-        .frame(width: 128)
-        .background(.ultraThinMaterial)
-    }
-
     private var toolbar: some View {
-        VStack(alignment: .leading, spacing: Design.Space.sm) {
-            HStack(spacing: Design.Space.sm) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Clipboard History").font(.system(size: 18, weight: .semibold))
-                    Text("\(filteredItems.count) items · \(filter.title)").font(.system(size: 11)).foregroundStyle(Design.Color.muted)
-                }
-                Spacer()
+        HStack(spacing: 10) {
+            ZStack {
+                Circle().fill(.ultraThinMaterial)
+                Image(systemName: "clipboard")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("History").font(.system(size: 13, weight: .medium))
+                Text("\(filteredItems.count) · \(filter.title)").font(.system(size: 10)).foregroundStyle(.tertiary)
+            }
+            HistorySearchBar(query: $query, focus: $searchFocused, compact: true)
+                .frame(maxWidth: .infinity)
+            HStack(spacing: 9) {
                 if store.settings.isPaused {
-                    Text("PAUSED")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Design.Color.pause)
+                    Circle().fill(Design.Color.pause).frame(width: 6, height: 6)
                 }
+                recordingMenu
                 filterMenu
                 cleanupMenu
+                settingsButton
             }
-            HistorySearchBar(query: $query, focus: $searchFocused)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
         }
-        .padding(.horizontal, Design.Space.md)
-        .padding(.vertical, Design.Space.sm)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
+    private var recordingMenu: some View {
+        Menu {
+            if store.settings.isPaused {
+                Button("Resume recording") { store.resumeRecording() }
+            } else {
+                ForEach(PauseDuration.allCases) { duration in Button(duration.title) { store.pause(for: duration) } }
+            }
+        } label: {
+            Image(systemName: store.settings.isPaused ? "pause.circle" : "record.circle")
+                .font(.system(size: 15))
+                .foregroundStyle(store.settings.isPaused ? Design.Color.pause : .secondary)
+        }
+        .menuStyle(.borderlessButton)
+        .accessibilityLabel(store.settings.isPaused ? "Recording paused" : "Recording active")
+    }
+
+    private var settingsButton: some View {
+        Button(action: onSettings) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open settings")
     }
 
     private var filterMenu: some View {
@@ -260,25 +255,6 @@ struct ClipboardPanelView: View {
     private func reveal(_ item: ClipboardItem, thenPaste: Bool = false) { store.authenticateForSensitiveAccess { success in if success { revealSensitiveIDs.insert(item.id); DispatchQueue.main.asyncAfter(deadline: .now() + 60) { revealSensitiveIDs.remove(item.id) }; if thenPaste { onPaste(item) } } } }
     private func searchScore(_ item: ClipboardItem) -> Int { let needle = query.lowercased(); let text = "\(item.alias ?? "") \(item.text)".lowercased(); return (text.hasPrefix(needle) ? 4 : 0) + (item.alias?.lowercased().contains(needle) == true ? 2 : 0) + (text.contains(needle) ? 1 : 0) }
     private func editorSheet(_ item: ClipboardItem) -> some View { VStack(alignment: .leading, spacing: 14) { Text(item.isTemplate ? "Fill in and preview template" : "Edit before pasting").font(.headline); TextEditor(text: $editorText).font(.body).frame(minHeight: 150); if !templateValues.isEmpty { ForEach(templateValues.keys.sorted(), id: \.self) { field in TextField(field, text: Binding(get: { templateValues[field] ?? "" }, set: { templateValues[field] = $0 })) } }; if item.isTemplate { Text("Built-ins: {{date}}, {{time}}, {{clipboard}}. Custom fields are requested above.").font(.caption).foregroundStyle(Design.Color.muted) }; Toggle("Save as a new history item", isOn: $saveEditedCopy); HStack { Spacer(); Button("Cancel") { editorItem = nil }; Button("Paste") { let resolved = store.resolveTemplate(editorText, fields: templateValues); if saveEditedCopy { store.capture(text: resolved, sourceApp: "PasteX") }; onPasteText(item, resolved); editorItem = nil }.keyboardShortcut(.defaultAction) } }.padding(20).frame(width: 480) }
-}
-
-private struct SidebarButton: View {
-    let title: String
-    let symbol: String
-    let selected: Bool
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: symbol)
-                .font(.system(size: 12, weight: selected ? .semibold : .regular))
-                .foregroundStyle(selected ? .primary : Design.Color.muted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, Design.Space.xs)
-                .padding(.vertical, 6)
-                .background(selected ? Design.Color.selected : .clear, in: RoundedRectangle(cornerRadius: Design.Radius.small))
-        }
-        .buttonStyle(.plain)
-    }
 }
 
 private struct SectionLabel: View {

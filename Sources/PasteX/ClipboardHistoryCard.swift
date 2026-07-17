@@ -28,7 +28,7 @@ struct ClipboardHistoryCard: View {
     private var visibleText: String { isProtected ? "Sensitive content" : item.preview }
 
     var body: some View {
-        Button(action: onSelect) {
+        Button(action: selectAndPaste) {
             HStack(alignment: .top, spacing: 12) {
                 leadingIcon
                 VStack(alignment: .leading, spacing: 7) {
@@ -51,7 +51,6 @@ struct ClipboardHistoryCard: View {
         .onHover { isHovered = $0 }
         .onLongPressGesture(minimumDuration: 0.35) { withAnimation(PasteXStyle.gentleMotion) { isExpanded.toggle() } }
         .contextMenu { contextMenu }
-        .onTapGesture(count: 2) { pasteWithFeedback() }
     }
 
     private var leadingIcon: some View {
@@ -156,5 +155,10 @@ struct ClipboardHistoryCard: View {
         didPaste = true
         onPaste()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { didPaste = false }
+    }
+
+    private func selectAndPaste() {
+        onSelect()
+        pasteWithFeedback()
     }
 }

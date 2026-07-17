@@ -38,10 +38,14 @@ final class PanelController: NSObject, NSWindowDelegate {
         NotificationCenter.default.post(name: .pasteXFocusSearch, object: nil)
     }
 
-    func hideHistory() {
+    func hideHistory(immediately: Bool = false) {
         guard let historyPanel else { return }
         isHistoryPresented = false
         NotificationCenter.default.post(name: .pasteXHistoryPresentation, object: false)
+        if immediately {
+            historyPanel.orderOut(nil)
+            return
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self, weak historyPanel] in
             guard self?.isHistoryPresented == false else { return }
             historyPanel?.orderOut(nil)
@@ -70,7 +74,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func paste(_ item: ClipboardItem, textOverride: String? = nil) {
-        hideHistory()
+        hideHistory(immediately: true)
         store.paste(item, into: pasteTarget, textOverride: textOverride)
     }
 

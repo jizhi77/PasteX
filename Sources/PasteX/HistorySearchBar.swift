@@ -3,6 +3,7 @@ import SwiftUI
 struct HistorySearchBar: View {
     @Binding var query: String
     var focus: FocusState<Bool>.Binding
+    var compact = false
 
     var body: some View {
         HStack(spacing: 9) {
@@ -23,8 +24,8 @@ struct HistorySearchBar: View {
             }
             KeyHint(value: "⌘K")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, compact ? 10 : 12)
+        .padding(.vertical, compact ? 7 : 10)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: PasteXStyle.inputRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: PasteXStyle.inputRadius, style: .continuous)
