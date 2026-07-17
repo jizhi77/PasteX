@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:-0.0.1}"
+VERSION="${1:-0.0.7}"
 ARCH="arm64"
 PRODUCT="PasteX"
 DIST="$ROOT/dist"
@@ -10,10 +10,12 @@ APP="$DIST/$PRODUCT.app"
 
 cd "$ROOT"
 swift build -c release
+ICON_FILE="$(bash "$ROOT/Scripts/build_icon.sh")"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp ".build/release/$PRODUCT" "$APP/Contents/MacOS/$PRODUCT"
+cp "$ICON_FILE" "$APP/Contents/Resources/PasteX.icns"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -23,6 +25,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>PasteX</string>
   <key>CFBundleIdentifier</key><string>com.pastex.app</string>
   <key>CFBundleName</key><string>PasteX</string>
+  <key>CFBundleIconFile</key><string>PasteX</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
@@ -33,6 +36,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 chmod +x "$APP/Contents/MacOS/$PRODUCT"
+codesign --force --deep --sign "${SIGNING_IDENTITY:--}" --timestamp=none "$APP"
+codesign --verify --deep --strict "$APP"
 rm -f "$DIST/$PRODUCT-v$VERSION-macos-$ARCH.zip"
 (
   cd "$DIST"

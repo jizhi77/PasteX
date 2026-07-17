@@ -1,0 +1,37 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="surface" x1="150" y1="100" x2="900" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A9D6FF"/>
+      <stop offset="0.46" stop-color="#7199FF"/>
+      <stop offset="1" stop-color="#5C61DF"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="300" y1="218" x2="760" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.86"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.26"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="355" y1="270" x2="690" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#293A88"/>
+      <stop offset="1" stop-color="#171C5C"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#152052" flood-opacity="0.28"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <rect x="56" y="56" width="912" height="912" rx="226" fill="url(#surface)"/>
+  <ellipse cx="300" cy="216" rx="250" ry="180" fill="white" fill-opacity="0.3" filter="url(#soft)"/>
+  <path d="M142 786C262 852 429 888 594 838C742 793 852 680 902 528V742C902 830 830 902 742 902H282C211 902 157 856 142 786Z" fill="#313AAB" fill-opacity="0.22"/>
+  <g filter="url(#shadow)">
+    <rect x="260" y="214" width="504" height="602" rx="112" fill="url(#glass)"/>
+    <rect x="261" y="215" width="502" height="600" rx="111" stroke="white" stroke-opacity="0.46" stroke-width="3"/>
+  </g>
+  <rect x="382" y="176" width="260" height="122" rx="60" fill="url(#ink)"/>
+  <rect x="411" y="201" width="202" height="30" rx="15" fill="white" fill-opacity="0.36"/>
+  <path d="M406 420H620" stroke="url(#ink)" stroke-width="48" stroke-linecap="round"/>
+  <path d="M406 518H620" stroke="url(#ink)" stroke-width="48" stroke-linecap="round"/>
+  <path d="M406 616H536" stroke="url(#ink)" stroke-width="48" stroke-linecap="round"/>
+  <circle cx="657" cy="647" r="88" fill="#F6F8FF" fill-opacity="0.96"/>
+  <path d="M620 648L646 674L700 614" stroke="#4955C5" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
