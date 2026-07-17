@@ -45,8 +45,8 @@ struct ClipboardPanelView: View {
     var body: some View {
         applyingKeyboardShortcuts(to: panelLayout)
         .frame(width: 700, height: 500)
-        .background(Design.Color.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Design.Color.separator, lineWidth: 1))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.5))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .onAppear { focusSearchAndSelectFirst() }
             .onReceive(NotificationCenter.default.publisher(for: .pasteXFocusSearch)) { _ in focusSearchAndSelectFirst() }
@@ -143,7 +143,7 @@ struct ClipboardPanelView: View {
         }
         .padding(Design.Space.sm)
         .frame(width: 128)
-        .background(Design.Color.elevated.opacity(0.32))
+        .background(.ultraThinMaterial)
     }
 
     private var toolbar: some View {
@@ -162,17 +162,7 @@ struct ClipboardPanelView: View {
                 filterMenu
                 cleanupMenu
             }
-            HStack(spacing: Design.Space.sm) {
-                Image(systemName: "magnifyingglass").foregroundStyle(Design.Color.muted)
-                TextField("Search history", text: $query)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 14))
-                    .focused($searchFocused)
-                KeyHint(value: "⌘K")
-            }
-            .padding(.horizontal, Design.Space.sm)
-            .padding(.vertical, 9)
-            .background(Design.Color.elevated, in: RoundedRectangle(cornerRadius: Design.Radius.small))
+            HistorySearchBar(query: $query, focus: $searchFocused)
         }
         .padding(.horizontal, Design.Space.md)
         .padding(.vertical, Design.Space.sm)
@@ -223,22 +213,24 @@ struct ClipboardPanelView: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 2) {
+                    LazyVStack(spacing: PasteXStyle.cardSpacing) {
                         if filter == .all && query.isEmpty, !store.items.filter(\.isFavorite).isEmpty {
                             SectionLabel("FAVORITES")
                             ForEach(store.items.filter(\.isFavorite)) { item in
-                                ClipboardRow(item: item, isSelected: selectedID == item.id, isBatchSelected: selectedIDs.contains(item.id), isRevealed: revealSensitiveIDs.contains(item.id), groups: store.settings.groups, onSelect: { selectedID = item.id }, onToggleSelection: { toggleBatchSelection(item) }, onPaste: { paste(item) }, onFavorite: { store.toggleFavorite(item) }, onGroup: { store.setGroup($0, for: item) }, onEdit: { beginEditing(item) }, onRename: { aliasItem = item; aliasText = item.alias ?? "" }, onPasswordManager: { passwordManagerItem = item; passwordManagerURL = item.passwordManagerURL ?? "" }, onOpenPasswordManager: { store.openPasswordManager(for: item) }, onReveal: { reveal(item) }, onDelete: { store.delete(item) })
+                                ClipboardHistoryCard(item: item, query: query, isSelected: selectedID == item.id, isBatchSelected: selectedIDs.contains(item.id), isRevealed: revealSensitiveIDs.contains(item.id), groups: store.settings.groups, onSelect: { selectedID = item.id }, onToggleSelection: { toggleBatchSelection(item) }, onPaste: { paste(item) }, onFavorite: { store.toggleFavorite(item) }, onGroup: { store.setGroup($0, for: item) }, onEdit: { beginEditing(item) }, onRename: { aliasItem = item; aliasText = item.alias ?? "" }, onPasswordManager: { passwordManagerItem = item; passwordManagerURL = item.passwordManagerURL ?? "" }, onOpenPasswordManager: { store.openPasswordManager(for: item) }, onReveal: { reveal(item) }, onDelete: { store.delete(item) })
                                     .id(item.id)
                             }
                             SectionLabel("RECENT")
                         }
                         ForEach(filteredItems.filter { !(filter == .all && query.isEmpty && $0.isFavorite) }) { item in
-                            ClipboardRow(item: item, isSelected: selectedID == item.id, isBatchSelected: selectedIDs.contains(item.id), isRevealed: revealSensitiveIDs.contains(item.id), groups: store.settings.groups, onSelect: { selectedID = item.id }, onToggleSelection: { toggleBatchSelection(item) }, onPaste: { paste(item) }, onFavorite: { store.toggleFavorite(item) }, onGroup: { store.setGroup($0, for: item) }, onEdit: { beginEditing(item) }, onRename: { aliasItem = item; aliasText = item.alias ?? "" }, onPasswordManager: { passwordManagerItem = item; passwordManagerURL = item.passwordManagerURL ?? "" }, onOpenPasswordManager: { store.openPasswordManager(for: item) }, onReveal: { reveal(item) }, onDelete: { store.delete(item) })
+                            ClipboardHistoryCard(item: item, query: query, isSelected: selectedID == item.id, isBatchSelected: selectedIDs.contains(item.id), isRevealed: revealSensitiveIDs.contains(item.id), groups: store.settings.groups, onSelect: { selectedID = item.id }, onToggleSelection: { toggleBatchSelection(item) }, onPaste: { paste(item) }, onFavorite: { store.toggleFavorite(item) }, onGroup: { store.setGroup($0, for: item) }, onEdit: { beginEditing(item) }, onRename: { aliasItem = item; aliasText = item.alias ?? "" }, onPasswordManager: { passwordManagerItem = item; passwordManagerURL = item.passwordManagerURL ?? "" }, onOpenPasswordManager: { store.openPasswordManager(for: item) }, onReveal: { reveal(item) }, onDelete: { store.delete(item) })
                                 .id(item.id)
                         }
                     }
                     .padding(Design.Space.md)
+                    .animation(PasteXStyle.gentleMotion, value: store.items.map(\.id))
                 }
+                .scrollIndicators(.hidden)
                 .onChange(of: selectedID) { _, id in
                     if let id { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(id, anchor: .center) } }
                 }
@@ -299,84 +291,5 @@ private struct SectionLabel: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, Design.Space.xs)
             .padding(.bottom, 2)
-    }
-}
-
-private struct ClipboardRow: View {
-    let item: ClipboardItem
-    let isSelected: Bool
-    let isBatchSelected: Bool
-    let isRevealed: Bool
-    let groups: [String]
-    let onSelect: () -> Void
-    let onToggleSelection: () -> Void
-    let onPaste: () -> Void
-    let onFavorite: () -> Void
-    let onGroup: (String?) -> Void
-    let onEdit: () -> Void
-    let onRename: () -> Void
-    let onPasswordManager: () -> Void
-    let onOpenPasswordManager: () -> Void
-    let onReveal: () -> Void
-    let onDelete: () -> Void
-
-    var body: some View {
-        Button(action: onSelect) {
-            HStack(alignment: .top, spacing: Design.Space.sm) {
-                Image(systemName: item.isFavorite ? "star.fill" : item.kind.symbol)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(item.isFavorite ? .yellow : Design.Color.muted)
-                    .frame(width: 18, height: 20)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.isSensitive && !isRevealed ? "••••••••••••" : item.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    HStack(spacing: 7) {
-                        Text(item.isSensitive && !isRevealed ? "Sensitive content — unlock to view" : item.preview)
-                            .lineLimit(1)
-                        if let group = item.group {
-                            Text(group.uppercased())
-                                .font(.system(size: 9, weight: .bold))
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(Design.Color.elevated, in: Capsule())
-                        }
-                    }
-                    .font(.system(size: 11))
-                    .foregroundStyle(Design.Color.muted)
-                    HStack(spacing: 6) { if let source = item.sourceApp { Text(source) }; if item.isSensitive { Label("Protected", systemImage: "lock.fill") }; if item.isTemplate { Text("TEMPLATE") } }
-                        .font(.system(size: 9, weight: .medium)).foregroundStyle(Design.Color.muted).lineLimit(1)
-                }
-                Spacer(minLength: 8)
-                Text(item.createdAt, style: .relative)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Design.Color.muted)
-                if isBatchSelected { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accentColor) }
-                if isSelected { KeyHint(value: "↵") }
-            }
-            .padding(.horizontal, Design.Space.sm)
-            .padding(.vertical, 9)
-            .contentShape(Rectangle())
-            .background(isSelected ? Design.Color.selected : .clear, in: RoundedRectangle(cornerRadius: Design.Radius.small))
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            Button(item.isSensitive && !isRevealed ? "Unlock and paste" : "Paste as plain text", action: isRevealed || !item.isSensitive ? onPaste : onReveal)
-            if item.isSensitive && !isRevealed { Button("Reveal with Touch ID / password", action: onReveal) }
-            Button("Edit before pasting…", action: onEdit)
-            Button("Rename…", action: onRename)
-            if item.isFavorite { Button(item.passwordManagerURL == nil ? "Add password manager link…" : "Edit password manager link…", action: onPasswordManager) }
-            if item.passwordManagerURL != nil { Button("Open password manager", action: onOpenPasswordManager) }
-            Button("Select for batch delete", action: onToggleSelection)
-            Button(item.isFavorite ? "Remove from favorites" : "Add to favorites", action: onFavorite)
-            Menu("Move to group") {
-                Button("No group") { onGroup(nil) }
-                ForEach(groups, id: \.self) { group in Button(group) { onGroup(group) } }
-            }
-            Divider()
-            Button("Delete", role: .destructive, action: onDelete)
-        }
-        .onTapGesture(count: 2, perform: onPaste)
     }
 }
