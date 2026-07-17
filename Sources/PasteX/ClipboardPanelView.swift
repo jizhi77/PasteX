@@ -105,9 +105,11 @@ struct ClipboardPanelView: View {
         VStack(alignment: .leading, spacing: Design.Space.xs) {
             HStack(spacing: Design.Space.xs) {
                 Image(systemName: "clipboard")
-                    .font(.system(size: 15, weight: .semibold))
-                Text("Clipboard History")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Design.Color.muted)
+                Text("PasteX")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Design.Color.muted)
                 Spacer()
                 if store.settings.isPaused {
                     Circle().fill(Design.Color.pause).frame(width: 7, height: 7)
@@ -117,17 +119,6 @@ struct ClipboardPanelView: View {
 
             SidebarButton(title: "All history", symbol: "clock", selected: filter == .all) { filter = .all }
             SidebarButton(title: "Favorites", symbol: "star", selected: filter == .favorites) { filter = .favorites }
-            Text("TYPES").font(.system(size: 10, weight: .semibold)).foregroundStyle(Design.Color.muted).padding(.top, Design.Space.sm).padding(.horizontal, Design.Space.xs)
-            ForEach(ClipboardKind.allCases) { kind in SidebarButton(title: kind.title, symbol: kind.symbol, selected: filter == .kind(kind)) { filter = .kind(kind) } }
-
-            Text("GROUPS")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Design.Color.muted)
-                .padding(.top, Design.Space.md)
-                .padding(.horizontal, Design.Space.xs)
-            ForEach(store.settings.groups, id: \.self) { group in
-                SidebarButton(title: group, symbol: "folder", selected: filter == .group(group)) { filter = .group(group) }
-            }
             Spacer()
             Divider().overlay(Design.Color.separator)
             Menu {
@@ -150,39 +141,69 @@ struct ClipboardPanelView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(Design.Space.md)
-        .frame(width: 170)
+        .padding(Design.Space.sm)
+        .frame(width: 128)
+        .background(Design.Color.elevated.opacity(0.32))
     }
 
     private var toolbar: some View {
-        HStack(spacing: Design.Space.sm) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Design.Color.muted)
-            TextField("Search history", text: $query)
-                .textFieldStyle(.plain)
-                .font(.system(size: 14))
-                .focused($searchFocused)
-            KeyHint(value: "⌘K")
-            Spacer()
-            if store.settings.isPaused {
-                Text("PAUSED")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Design.Color.pause)
+        VStack(alignment: .leading, spacing: Design.Space.sm) {
+            HStack(spacing: Design.Space.sm) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Clipboard History").font(.system(size: 18, weight: .semibold))
+                    Text("\(filteredItems.count) items · \(filter.title)").font(.system(size: 11)).foregroundStyle(Design.Color.muted)
+                }
+                Spacer()
+                if store.settings.isPaused {
+                    Text("PAUSED")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Design.Color.pause)
+                }
+                filterMenu
+                cleanupMenu
             }
-            Menu {
-                Button("Clear last 5 minutes", role: .destructive) { store.clearRecent(minutes: 5) }
-                Button("Clear last 15 minutes", role: .destructive) { store.clearRecent(minutes: 15) }
-                Button("Clear last 30 minutes", role: .destructive) { store.clearRecent(minutes: 30) }
-                Button("Clear non-pinned history", role: .destructive) { store.clearHistory() }
-                Button("Delete everything", role: .destructive) { showingDeleteAllConfirmation = true }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Design.Color.muted)
+            HStack(spacing: Design.Space.sm) {
+                Image(systemName: "magnifyingglass").foregroundStyle(Design.Color.muted)
+                TextField("Search history", text: $query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 14))
+                    .focused($searchFocused)
+                KeyHint(value: "⌘K")
             }
-            .menuStyle(.borderlessButton)
+            .padding(.horizontal, Design.Space.sm)
+            .padding(.vertical, 9)
+            .background(Design.Color.elevated, in: RoundedRectangle(cornerRadius: Design.Radius.small))
         }
         .padding(.horizontal, Design.Space.md)
-        .frame(height: 52)
+        .padding(.vertical, Design.Space.sm)
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Button("All history") { filter = .all }
+            Button("Favorites") { filter = .favorites }
+            Divider()
+            Menu("Type") { ForEach(ClipboardKind.allCases) { kind in Button(kind.title) { filter = .kind(kind) } } }
+            Menu("Group") { ForEach(store.settings.groups, id: \.self) { group in Button(group) { filter = .group(group) } } }
+        } label: {
+            Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(filter == .all ? Design.Color.muted : Color.accentColor)
+        }
+        .menuStyle(.borderlessButton)
+    }
+
+    private var cleanupMenu: some View {
+        Menu {
+            Button("Clear last 5 minutes", role: .destructive) { store.clearRecent(minutes: 5) }
+            Button("Clear last 15 minutes", role: .destructive) { store.clearRecent(minutes: 15) }
+            Button("Clear last 30 minutes", role: .destructive) { store.clearRecent(minutes: 30) }
+            Button("Clear non-pinned history", role: .destructive) { store.clearHistory() }
+            Button("Delete everything", role: .destructive) { showingDeleteAllConfirmation = true }
+        } label: {
+            Image(systemName: "ellipsis.circle").font(.system(size: 15)).foregroundStyle(Design.Color.muted)
+        }
+        .menuStyle(.borderlessButton)
     }
 
     @ViewBuilder
@@ -216,7 +237,7 @@ struct ClipboardPanelView: View {
                                 .id(item.id)
                         }
                     }
-                    .padding(Design.Space.sm)
+                    .padding(Design.Space.md)
                 }
                 .onChange(of: selectedID) { _, id in
                     if let id { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(id, anchor: .center) } }
