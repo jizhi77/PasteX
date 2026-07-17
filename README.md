@@ -12,7 +12,7 @@ The default global shortcut is **Option-Space** (configurable to Command-Shift-V
 
 PasteX requests macOS Accessibility permission only when it needs to paste into the previously active application, position its compact menu near a focused input, or expand snippets system-wide.
 
-## What is included in 0.0.2
+## What is included in 0.0.3
 
 - Clipboard history with text, link, code, and color classification; source-app and timestamp metadata; duplicate suppression; search and type/group filters.
 - Menu-bar resident app, configurable global shortcut, keyboard-first panel, compact focused-input positioning with a safe centred fallback, and light/dark native UI.
@@ -21,17 +21,18 @@ PasteX requests macOS Accessibility permission only when it needs to paste into 
 - Configurable history lifetime (1 day, 7 days, 30 days, or forever), maximum item count, and maximum item size. Pinned items are excluded from normal pruning.
 - Privacy controls: timed or manual pause, default password-manager app exclusions, sensitive-content detection, optional short-term sensitive storage, automatic sensitive expiry, Touch ID/system-password reveal, strict screen-sharing masking, and post-paste clipboard clearing.
 - Encrypted local persistence. History and settings live in `~/Library/Application Support/PasteX/history.pastex`; the AES key is stored in the user’s Keychain. A legacy `history.json` file is migrated on first launch.
+- Settings open in their own window. Clipboard history opens as an independent borderless floating panel, automatically focuses search, supports type/group/favorites filtering, and closes when it loses focus.
 
 ## Build a distribution package
 
 ```bash
-./Scripts/package.sh 0.0.2
+./Scripts/package.sh 0.0.3
 ```
 
-This creates `dist/PasteX-v0.0.2-macos-arm64.zip`, containing an ad-hoc signed `PasteX.app` for Apple Silicon Macs. To sign with a Developer ID for external distribution, provide your identity:
+This creates `dist/PasteX-v0.0.3-macos-arm64.zip`, containing an ad-hoc signed `PasteX.app` for Apple Silicon Macs. To sign with a Developer ID for external distribution, provide your identity:
 
 ```bash
-SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./Scripts/package.sh 0.0.2
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./Scripts/package.sh 0.0.3
 ```
 
-The GitHub `v0.0.2` release includes the generated ZIP and its SHA-256 checksum.
+The GitHub `v0.0.3` release includes the generated ZIP and its SHA-256 checksum.

@@ -4,7 +4,7 @@ import SwiftUI
 @MainActor
 final class PanelController: NSObject, NSWindowDelegate {
     private let store: ClipboardStore
-    private var panel: NSPanel?
+    private var historyPanel: NSPanel?
     private var settingsPanel: NSPanel?
     private var pasteTarget: NSRunningApplication?
 
@@ -13,12 +13,12 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func toggle() {
-        if panel?.isVisible == true { hide() } else { show() }
+        if historyPanel?.isVisible == true { hideHistory() } else { showHistory() }
     }
 
-    func show() {
+    func showHistory() {
         pasteTarget = NSWorkspace.shared.frontmostApplication
-        let panel = makePanelIfNeeded()
+        let panel = makeHistoryPanelIfNeeded()
         if store.settings.quickMenuNearCursor, let point = focusedInputPoint() {
             let screen = NSScreen.screens.first { $0.visibleFrame.contains(point) } ?? NSScreen.main
             let visible = screen?.visibleFrame ?? .zero
@@ -32,11 +32,12 @@ final class PanelController: NSObject, NSWindowDelegate {
         NotificationCenter.default.post(name: .pasteXFocusSearch, object: nil)
     }
 
-    func hide() {
-        panel?.orderOut(nil)
+    func hideHistory() {
+        historyPanel?.orderOut(nil)
     }
 
     func showSettings() {
+        hideHistory()
         let panel: NSPanel
         if let settingsPanel { panel = settingsPanel }
         else {
@@ -57,31 +58,37 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func paste(_ item: ClipboardItem, textOverride: String? = nil) {
-        hide()
+        hideHistory()
         store.paste(item, into: pasteTarget, textOverride: textOverride)
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        guard let panel, panel.isVisible, settingsPanel?.isKeyWindow != true else { return }
-        panel.orderOut(nil)
+        guard let historyPanel, historyPanel.isVisible, settingsPanel?.isKeyWindow != true else { return }
+        historyPanel.orderOut(nil)
     }
 
-    private func makePanelIfNeeded() -> NSPanel {
-        if let panel { return panel }
+    private func makeHistoryPanelIfNeeded() -> NSPanel {
+        if let historyPanel { return historyPanel }
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 760, height: 540),
-            styleMask: [.titled, .closable, .fullSizeContentView],
+            contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
+            styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
+        panel.title = "PasteX Clipboard History"
         panel.titleVisibility = .hidden
-        panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
         panel.isMovableByWindowBackground = true
         panel.level = .floating
+        panel.hidesOnDeactivate = true
+        panel.collectionBehavior = [.canJoinAllSpaces, .transient]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.animationBehavior = .utilityWindow
         panel.delegate = self
-        panel.contentView = NSHostingView(rootView: ClipboardPanelView(store: store, onPaste: { [weak self] item in self?.paste(item) }, onPasteText: { [weak self] item, text in self?.paste(item, textOverride: text) }, onSettings: { [weak self] in self?.showSettings() }, onClose: { [weak self] in self?.hide() }))
-        self.panel = panel
+        panel.contentView = NSHostingView(rootView: ClipboardPanelView(store: store, onPaste: { [weak self] item in self?.paste(item) }, onPasteText: { [weak self] item, text in self?.paste(item, textOverride: text) }, onSettings: { [weak self] in self?.showSettings() }, onClose: { [weak self] in self?.hideHistory() }))
+        self.historyPanel = panel
         return panel
     }
 

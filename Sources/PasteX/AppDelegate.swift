@@ -37,7 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func refreshMenu() {
         let menu = NSMenu()
-        let open = NSMenuItem(title: "Open PasteX", action: #selector(togglePanel), keyEquivalent: "")
+        let open = NSMenuItem(title: "Open Clipboard History", action: #selector(togglePanel), keyEquivalent: "")
         open.target = self
         menu.addItem(open)
         if store.settings.isPaused {

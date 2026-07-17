@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:-0.0.2}"
+VERSION="${1:-0.0.3}"
 ARCH="arm64"
 PRODUCT="PasteX"
 DIST="$ROOT/dist"

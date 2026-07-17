@@ -44,8 +44,10 @@ struct ClipboardPanelView: View {
 
     var body: some View {
         applyingKeyboardShortcuts(to: panelLayout)
-            .frame(minWidth: 700, minHeight: 480)
-            .background(Design.Color.panel)
+        .frame(width: 700, height: 500)
+        .background(Design.Color.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Design.Color.separator, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .onAppear { focusSearchAndSelectFirst() }
             .onReceive(NotificationCenter.default.publisher(for: .pasteXFocusSearch)) { _ in focusSearchAndSelectFirst() }
             .onChange(of: query) { _, _ in selectFirstIfNeeded() }
@@ -104,7 +106,7 @@ struct ClipboardPanelView: View {
             HStack(spacing: Design.Space.xs) {
                 Image(systemName: "clipboard")
                     .font(.system(size: 15, weight: .semibold))
-                Text("PasteX")
+                Text("Clipboard History")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
                 if store.settings.isPaused {
@@ -155,7 +157,7 @@ struct ClipboardPanelView: View {
     private var toolbar: some View {
         HStack(spacing: Design.Space.sm) {
             Image(systemName: "magnifyingglass").foregroundStyle(Design.Color.muted)
-            TextField("Search clipboard history", text: $query)
+            TextField("Search history", text: $query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 14))
                 .focused($searchFocused)
